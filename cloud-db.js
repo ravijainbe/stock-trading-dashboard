@@ -4,7 +4,7 @@ class CloudDB extends StockDB {
         super();
         this.authManager = authManager;
         this.supabaseUrl = 'https://gccjgjulqjzagxuffzqj.supabase.co';
-        this.supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // TODO: Add your anon key from Supabase Settings → API
+        this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjY2pnanVscWp6YWd4dWZmenFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzOTE5ODgsImV4cCI6MjA3ODk2Nzk4OH0.mHyqaG2lsZcAll9azQZ0bmcTOjlT0dOn6wC-jfEqPb8'; // TODO: Add your anon key from Supabase Settings → API
         this.supabase = null;
         this.syncEnabled = true;
     }
