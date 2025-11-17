@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Stock Trading Dashboard with Zerodha Kite Integration">
+    <meta name="theme-color" content="#667eea">
+    <title>Stock Trading Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Authentication Container -->
+    <div id="auth-container" class="auth-container">
+        <div class="auth-box">
+            <h1>📈 Stock Trading Dashboard</h1>
+            <p class="auth-subtitle">Track your portfolio with Zerodha Kite integration</p>
+
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form">
+                <h2>Welcome Back</h2>
+                <form id="login-form-element">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit" class="btn-auth">Sign In</button>
+                </form>
+                <p class="auth-switch">
+                    Don't have an account? <a href="#" onclick="showSignup(); return false;">Sign Up</a>
+                </p>
+                <p class="auth-switch">
+                    <a href="#" onclick="showForgotPassword(); return false;">Forgot Password?</a>
+                </p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signup-form" class="auth-form hidden">
+                <h2>Create Account</h2>
+                <form id="signup-form-element">
+                    <input type="text" id="signup-name" placeholder="Full Name" required>
+                    <input type="email" id="signup-email" placeholder="Email" required>
+                    <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required minlength="6">
+                    <input type="password" id="signup-confirm" placeholder="Confirm Password" required>
+                    <select id="signup-role" required>
+                        <option value="">Select Role</option>
+                        <option value="user">Regular User</option>
+                        <option value="admin">Admin (Multi-Profile Access)</option>
+                    </select>
+                    <button type="submit" class="btn-auth">Sign Up</button>
+                </form>
+                <p class="auth-switch">
+                    Already have an account? <a href="#" onclick="showLogin(); return false;">Sign In</a>
+                </p>
+            </div>
+
+            <!-- Forgot Password Form -->
+            <div id="forgot-form" class="auth-form hidden">
+                <h2>Reset Password</h2>
+                <form id="forgot-form-element">
+                    <input type="email" id="forgot-email" placeholder="Email" required>
+                    <button type="submit" class="btn-auth">Send Reset Link</button>
+                </form>
+                <p class="auth-switch">
+                    <a href="#" onclick="showLogin(); return false;">Back to Login</a>
+                </p>
+            </div>
+
+            <div id="auth-message" class="auth-message"></div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1>📈 Stock Trading Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <span class="user-greeting">Hello, <span id="user-name">User</span>!</span>
+                <button class="btn-sync" onclick="syncKiteData()" title="Sync with Kite">🔄 Sync</button>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <button class="nav-btn active" data-view="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Dashboard</span>
+            </button>
+            <button class="nav-btn" data-view="portfolio">
+                <span class="nav-icon">💼</span>
+                <span class="nav-label">Portfolio</span>
+            </button>
+            <button class="nav-btn" data-view="trades">
+                <span class="nav-icon">📝</span>
+                <span class="nav-label">Trades</span>
+            </button>
+            <button class="nav-btn" data-view="analytics">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Analytics</span>
+            </button>
+            <button class="nav-btn" data-view="watchlist">
+                <span class="nav-icon">👁️</span>
+                <span class="nav-label">Watchlist</span>
+            </button>
+            <button class="nav-btn admin-only hidden" data-view="consolidated">
+                <span class="nav-icon">🏢</span>
+                <span class="nav-label">Consolidated</span>
+            </button>
+            <button class="nav-btn" data-view="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Dashboard View -->
+            <div id="dashboard" class="view active">
+                <h2>Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Portfolio Value</div>
+                        <div class="stat-value" id="portfolio-value">₹0</div>
+                        <div class="stat-change" id="portfolio-change">+0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total P&L</div>
+                        <div class="stat-value" id="total-pl">₹0</div>
+                        <div class="stat-change" id="total-pl-percent">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Today's P&L</div>
+                        <div class="stat-value" id="today-pl">₹0</div>
+                        <div class="stat-change" id="today-pl-percent">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value" id="total-trades">0</div>
+                        <div class="stat-change" id="win-rate">0% Win Rate</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-section">
+                    <h3>Recent Trades</h3>
+                    <div id="recent-trades"></div>
+                </div>
+
+                <div class="dashboard-section">
+                    <h3>Top Performers</h3>
+                    <div id="top-performers"></div>
+                </div>
+            </div>
+
+            <!-- Portfolio View -->
+            <div id="portfolio" class="view">
+                <div class="view-header">
+                    <h2>Portfolio</h2>
+                    <button class="btn-primary" onclick="refreshPrices()">🔄 Refresh Prices</button>
+                </div>
+                <div id="portfolio-list"></div>
+            </div>
+
+            <!-- Trades View -->
+            <div id="trades" class="view">
+                <div class="view-header">
+                    <h2>Trade History</h2>
+                    <button class="btn-primary" onclick="openTradeModal()">+ Add Trade</button>
+                </div>
+                <div class="trade-filters">
+                    <input type="text" id="trade-search" placeholder="Search by symbol...">
+                    <select id="trade-type-filter">
+                        <option value="">All Types</option>
+                        <option value="BUY">Buy</option>
+                        <option value="SELL">Sell</option>
+                    </select>
+                    <input type="date" id="trade-date-from">
+                    <input type="date" id="trade-date-to">
+                </div>
+                <div id="trades-list"></div>
+            </div>
+
+            <!-- Analytics View -->
+            <div id="analytics" class="view">
+                <h2>Analytics</h2>
+                <div class="chart-container">
+                    <canvas id="pl-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="allocation-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Watchlist View -->
+            <div id="watchlist" class="view">
+                <div class="view-header">
+                    <h2>Watchlist</h2>
+                    <button class="btn-primary" onclick="addToWatchlist()">+ Add Stock</button>
+                </div>
+                <div id="watchlist-list"></div>
+            </div>
+
+            <!-- Consolidated View (Admin Only) -->
+            <div id="consolidated" class="view admin-only">
+                <h2>Consolidated Dashboard</h2>
+                <div class="view-header">
+                    <button class="btn-primary" onclick="syncAllProfiles()">🔄 Sync All Profiles</button>
+                    <button class="btn-primary" onclick="manageProfiles()">⚙️ Manage Profiles</button>
+                </div>
+                <div id="consolidated-content"></div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings" class="view">
+                <h2>Settings</h2>
+                <div class="settings-section">
+                    <h3>Zerodha Kite Connection</h3>
+                    <div id="kite-status"></div>
+                    <button class="btn-primary" id="kite-connect-btn" onclick="connectKite()">Connect Kite</button>
+                </div>
+                <div class="settings-section">
+                    <h3>Sync Settings</h3>
+                    <label>
+                        <input type="checkbox" id="auto-sync"> Enable Auto-Sync
+                    </label>
+                    <label>
+                        Sync Interval:
+                        <select id="sync-interval">
+                            <option value="5">5 minutes</option>
+                            <option value="15" selected>15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60">1 hour</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="settings-section">
+                    <h3>Data Management</h3>
+                    <button class="btn-primary" onclick="exportData()">📥 Export Data</button>
+                    <button class="btn-primary" onclick="document.getElementById('import-file').click()">📤 Import Data</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Trade Modal -->
+    <div id="trade-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTradeModal()">&times;</span>
+            <h2>Add Trade</h2>
+            <form id="trade-form">
+                <label>Stock Symbol *</label>
+                <input type="text" id="trade-symbol" placeholder="e.g., RELIANCE" required>
+
+                <label>Exchange *</label>
+                <select id="trade-exchange" required>
+                    <option value="NSE">NSE</option>
+                    <option value="BSE">BSE</option>
+                </select>
+
+                <label>Type *</label>
+                <select id="trade-type" required>
+                    <option value="BUY">Buy</option>
+                    <option value="SELL">Sell</option>
+                </select>
+
+                <label>Quantity *</label>
+                <input type="number" id="trade-quantity" min="1" required>
+
+                <label>Price *</label>
+                <input type="number" id="trade-price" step="0.01" min="0" required>
+
+                <label>Brokerage</label>
+                <input type="number" id="trade-brokerage" step="0.01" min="0" value="0">
+
+                <label>Taxes & Charges</label>
+                <input type="number" id="trade-taxes" step="0.01" min="0" value="0">
+
+                <label>Trade Date *</label>
+                <input type="date" id="trade-date" required>
+
+                <label>Trade Time</label>
+                <input type="time" id="trade-time">
+
+                <label>Notes</label>
+                <textarea id="trade-notes" rows="3"></textarea>
+
+                <div class="form-summary">
+                    <strong>Net Amount: ₹<span id="net-amount">0</span></strong>
+                </div>
+
+                <button type="submit" class="btn-primary">Add Trade</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="config.js"></script>
+    <script src="db.js"></script>
+    <script src="auth.js"></script>
+    <script src="kite-client.js"></script>
+    <script src="trade-manager.js"></script>
+    <script src="portfolio-calculator.js"></script>
+    <script src="pl-calculator.js"></script>
+    <script src="app.js"></script>
+    <script src="auth-handler.js"></script>
+
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.error('Service Worker registration failed:', err));
+        }
+    </script>
+</body>
+</html>
