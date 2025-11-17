@@ -299,8 +299,8 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="config.js"></script>
     <script src="db.js"></script>
+    <script src="cloud-db.js"></script>
     <script src="auth.js"></script>
     <script src="kite-client.js"></script>
     <script src="trade-manager.js"></script>
@@ -310,11 +310,14 @@
     <script src="auth-handler.js"></script>
 
     <script>
-        // Register service worker
+        // Unregister old service workers and don't register new one for now
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registered'))
-                .catch(err => console.error('Service Worker registration failed:', err));
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Service Worker unregistered');
+                }
+            });
         }
     </script>
 </body>

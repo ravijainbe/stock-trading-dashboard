@@ -1,18 +1,19 @@
 // Service Worker for Stock Trading Dashboard
 const CACHE_NAME = 'stock-dashboard-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/db.js',
-    '/auth.js',
-    '/kite-client.js',
-    '/trade-manager.js',
-    '/portfolio-calculator.js',
-    '/pl-calculator.js',
-    '/app.js',
-    '/auth-handler.js',
-    '/manifest.json'
+    './index.html',
+    './styles.css',
+    './db.js',
+    './cloud-db.js',
+    './auth.js',
+    './kite-client.js',
+    './trade-manager.js',
+    './portfolio-calculator.js',
+    './pl-calculator.js',
+    './app.js',
+    './auth-handler.js',
+    './manifest.json',
+    './favicon.svg'
 ];
 
 // Install event - cache resources
@@ -21,8 +22,16 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('Opened cache');
-                return cache.addAll(urlsToCache);
+                // Cache files individually to avoid failure if one file is missing
+                return Promise.all(
+                    urlsToCache.map(url => {
+                        return cache.add(url).catch(err => {
+                            console.warn('Failed to cache:', url, err);
+                        });
+                    })
+                );
             })
+            .then(() => self.skipWaiting())
     );
 });
 
@@ -71,6 +80,6 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
